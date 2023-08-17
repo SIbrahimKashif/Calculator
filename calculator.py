@@ -1,12 +1,14 @@
 import PySimpleGUI as sg
 
+# constants
 font_name = "Segoe UI Light"
 button_font = ("Segoe UI Light", 15)
 orange = "#ff9500"
 grey = "#727475"
-grey2 = "#555556"
+dark_grey = "#555556"
 
 
+# format the number to add a ',' after every 3 digits
 def format_num(num_string):
     if len(num_string) > 0:
         formatted_num = (
@@ -17,6 +19,7 @@ def format_num(num_string):
         return formatted_num
 
 
+# format the ans to add a ',' after every 3 digits and round it to fit on screen
 def format_ans(ans, str_ans, length):
     formatted_ans = (
         "{:,}".format(round(ans, 17 - length))
@@ -28,18 +31,17 @@ def format_ans(ans, str_ans, length):
     return formatted_ans
 
 
-image_data = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\rIDATx\x9cc````\x00\x00\x00\x05\x00\x01\xa5\xf6E@\x00\x00\x00\x00IEND\xaeB`\x82"
-
-
+# make an option to change theme by right clicking on the text box
 def create_win(theme):
     sg.theme(theme)
     sg.set_options(font=(font_name, 15))
     button_size = (6, 3)
 
+    # create the layout
     layout = [
         [
             sg.Text(
-                "",
+                "Calculater",
                 font=(font_name, 25),
                 justification="center",
                 expand_x=True,
@@ -50,9 +52,12 @@ def create_win(theme):
         ],
         [
             sg.Button(
-                "Calculate", key="Enter", expand_x=True, button_color=(None, grey2)
+                "Calculate",
+                key="Enter",
+                expand_x=True,
+                button_color=(None, dark_grey),
             ),
-            sg.Button("Clear", size=(6, None), button_color=(None, grey2)),
+            sg.Button("Clear", size=(6, None), button_color=(None, dark_grey)),
             sg.Button("Del", size=(6, None)),
         ],
         [
@@ -71,13 +76,13 @@ def create_win(theme):
             sg.Button(1, size=button_size, button_color=(None, grey)),
             sg.Button(2, size=button_size, button_color=(None, grey)),
             sg.Button(3, size=button_size, button_color=(None, grey)),
-            sg.Button("+", size=button_size, button_color=(None, orange)),
+            sg.Button("+", key="+", size=button_size, button_color=(None, orange)),
         ],
         [
             sg.Button(0, size=button_size, button_color=(None, grey)),
             sg.Button("000", size=button_size, button_color=(None, grey)),
             sg.Button(".", size=button_size, button_color=(None, grey)),
-            sg.Button("-", size=button_size, button_color=(None, orange)),
+            sg.Button("-", key="-", size=button_size, button_color=(None, orange)),
         ],
     ]
     return sg.Window("Calculator", layout)
@@ -85,8 +90,10 @@ def create_win(theme):
 
 theme_menu = ["menu", ["LightGrey1", "dark", "Darkgray8", "random"]]
 
+# create window with default theme
 window = create_win("DarkGray8")
 
+# create lists
 current_num = []
 operations = []
 saved_ans = []
@@ -94,31 +101,31 @@ saved_ans = []
 while True:
     event, values = window.read()
 
-    # print(saved_ans)
-    # print(operations)
-    # print(current_num)
-
     if event == sg.WINDOW_CLOSED:
         break
 
+    # create new window with new theme
     elif event in theme_menu[1]:
         window.close()
         window = create_win(event)
 
+    # add the typed numbers to a string and display the formatted number
     elif event in ["0", "000", "1", "2", "3", "4", "5", "6", "7", "8", "9", "."]:
         current_num.append(event)
         num_string = "".join(current_num)
 
         formatted_num = format_num(num_string)
-
+        # if number is too big to display on screen only show the first 17 digits
         formatted_num = (
             formatted_num[:16] if len(formatted_num) >= 17 else formatted_num
         )
 
         window["text"].update(formatted_num)
 
+    # add the operators and num string to operations list
     elif event in ["*", "/", "-", "+"]:
         try:
+            # use the saved ans instead of the numstring if it doesnt exists
             value = (
                 saved_ans
                 if len(current_num) == 0
@@ -130,23 +137,28 @@ while True:
             if value:
                 operations.append("".join(value))
 
+            # empty the lists
             current_num = []
             saved_ans = []
             operations.append(event)
 
+            # display the operators on screen
             symbol = "x" if event == "*" else "÷" if event == "/" else event
             window["text"].update(symbol)
 
+        # handle errors
         except NameError:
             current_num = []
             operations = []
             window["text"].update("Error")
 
+    # convert the operations list to an equaion and solve it
     elif event == "Enter":
         try:
             operations.append("".join(current_num))
             ans = eval(" ".join(operations))
 
+            # shorten and format ans so it fits on screen
             length = len(str(ans).split(".")[0])
             str_ans = str(ans)
 
@@ -155,22 +167,28 @@ while True:
 
             formatted_ans = format_ans(ans, str_ans, length)
 
+            # add the ans to saved ans and empty lists
             saved_ans = [str_ans]
             operations = []
             current_num = []
+
+            # display formatted ans
             window["text"].update(formatted_ans)
 
+        # handle errors
         except SyntaxError:
             current_num = []
             operations = []
             window["text"].update("Error: Invalid Syntax")
 
+    # clear the lists and the text box
     elif event == "Clear":
         current_num = []
         operations = []
         saved_ans = []
         window["text"].update("")
 
+    # delete the last typed value
     elif event == "Del":
         try:
             if len(current_num) != 0:
@@ -184,6 +202,9 @@ while True:
                 window["text"].update(format_num("".join(saved_ans)))
             else:
                 window["text"].update("")
+
+        # handle errors
         except ValueError:
             window["text"].update("Error")
+
 window.close()
