@@ -2,7 +2,7 @@ import PySimpleGUI as sg
 
 # constants
 font_name = "Segoe UI Light"
-button_font = ("Segoe UI Light", 15)
+button_font = (font_name, 15)
 orange = "#ff9500"
 grey = "#727475"
 dark_grey = "#555556"
